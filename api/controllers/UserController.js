@@ -23,11 +23,12 @@ exports.create = (req, res) => {
     User.create(user, (err, data) => {
         if (err) {
             res.status(500).send({
-                message:
-                    err.message || "Some error occurred while creating the Product."
+                status: false,
+                message: err.message || "Some error occurred while creating the user."
             });
         } else {
-            data.verification_code = verificationCode
+            data.verification_code = verificationCode;
+            data.status = true
             res.send(data);
         }
     });
@@ -39,9 +40,37 @@ exports.getUser = (req, res) => {
     User.findById(req.userId, (err, data) => {
         if (err) {
             res.status(500).send({
+                status: false,
                 message:
-                    err.message || "Some error occurred while creating the Product."
+                    err.message || "Some error occurred while getting details."
             });
+        } else {
+            delete data.password;
+            delete data.verification_code;
+            res.send(data);
+        }
+    });
+
+};
+
+exports.verifyOtp = (req, res) => {
+
+    var verification_code = md5(parseFloat(req.body.verification_code))
+
+    User.verifyOtp(req.userId, verification_code, (err, data) => {
+        if (err) {
+            if (err.kind === "not_found") {
+                res.status(404).send({
+                    status: false,
+                    message: `Not found`
+                });
+            } else {
+                res.status(500).send({
+                    status: false,
+                    message:
+                        err.message || "Some error occurred while sending code."
+                });
+            }
         } else {
             delete data.password;
             delete data.verification_code;
