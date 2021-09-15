@@ -1,5 +1,7 @@
-const User = require("../models/UserModel.js");
 var md5 = require('md5');
+const db = require("../models");
+const User = db.user;
+var jwt = require("jsonwebtoken");
 
 exports.create = (req, res) => {
 
@@ -10,7 +12,7 @@ exports.create = (req, res) => {
     }
 
     var verificationCode = Math.floor(100000 + Math.random() * 900000);
-    const user = new User({
+    const user = {
         first_name: req.body.first_name,
         last_name: req.body.last_name,
         mobile_number: req.body.mobile_number,
@@ -18,64 +20,72 @@ exports.create = (req, res) => {
         user_name: req.body.user_name,
         password: md5(req.body.password),
         verification_code: md5(verificationCode)
-    });
-
-    User.create(user, (err, data) => {
-        if (err) {
+    };
+    User.create(user)
+        .then(data => {
+            var token = jwt.sign({ id: data.id }, 'releife_app', {
+                expiresIn: 86400 // 24 hours
+            });
+            data.verification_code = verificationCode;
+            var data = {
+                status: true,
+                token: token,
+                userData: data
+            }
+            res.send(data);
+        })
+        .catch(err => {
             res.status(500).send({
                 status: false,
-                message: err.message || "Some error occurred while creating the user."
+                message: err.message || "Some error occurred while creating the Tutorial."
             });
-        } else {
-            data.verification_code = verificationCode;
-            data.status = true
-            res.send(data);
-        }
-    });
-
+        });
 };
 
 exports.getUser = (req, res) => {
 
-    User.findById(req.userId, (err, data) => {
-        if (err) {
+    User.findAll({ where: { id: req.userId, } })
+        .then(data => {
+            if (data.length != 0) {
+                delete data.password;
+                delete data.verification_code;
+                res.send(data[0]);
+            } else {
+                res.status(400).send({
+                    status: false,
+                    message: "User not found!"
+                });
+            }
+        })
+        .catch(err => {
             res.status(500).send({
                 status: false,
-                message:
-                    err.message || "Some error occurred while getting details."
+                message: err.message || "Some error occurred while retrieving tutorials."
             });
-        } else {
-            delete data.password;
-            delete data.verification_code;
-            res.send(data);
-        }
-    });
-
+        });
 };
 
 exports.verifyOtp = (req, res) => {
 
     var verification_code = md5(parseFloat(req.body.verification_code))
 
-    User.verifyOtp(req.userId, verification_code, (err, data) => {
-        if (err) {
-            if (err.kind === "not_found") {
-                res.status(404).send({
-                    status: false,
-                    message: `Not found`
-                });
-            } else {
-                res.status(500).send({
-                    status: false,
-                    message:
-                        err.message || "Some error occurred while sending code."
-                });
-            }
+    User.update({ status: 'active' }, {
+        where: { id: req.userId, verification_code: verification_code }
+    }).then(num => {
+        if (num == 1) {
+            res.send({
+                "success": true,
+                "message": "code verify successfully."
+            });
         } else {
-            delete data.password;
-            delete data.verification_code;
-            res.send(data);
+            res.send({
+                "success": false,
+                "message": "Incorrect code."
+            });
         }
+    }).catch(err => {
+        res.status(500).send({
+            message: "Error updating Tutorial with id=" + id
+        });
     });
-
 };
