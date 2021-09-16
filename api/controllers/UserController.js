@@ -27,6 +27,7 @@ exports.create = (req, res) => {
                 expiresIn: 86400 // 24 hours
             });
             data.verification_code = verificationCode;
+            delete data.password;
             var data = {
                 status: true,
                 token: token,
@@ -42,13 +43,44 @@ exports.create = (req, res) => {
         });
 };
 
+exports.login = (req, res) => {
+    var password = md5(req.body.password)
+    User.findAll({ where: { user_name: req.body.user_name, password: password } })
+        .then(data => {
+            if (data.length != 0) {
+                var token = jwt.sign({ id: data.id }, 'releife_app', {
+                    expiresIn: 86400 // 24 hours
+                });
+                delete data[0].password;
+                delete data[0].verification_code;
+                var dataObject = {
+                    status: true,
+                    token: token,
+                    userData: data[0]
+                }
+                res.send(dataObject);
+            } else {
+                res.status(400).send({
+                    status: false,
+                    message: "Email or Password not Match!"
+                });
+            }
+        })
+        .catch(err => {
+            res.status(500).send({
+                status: false,
+                message: err.message || "Some error occurred while retrieving tutorials."
+            });
+        });
+}
+
 exports.getUser = (req, res) => {
 
     User.findAll({ where: { id: req.userId, } })
         .then(data => {
             if (data.length != 0) {
-                delete data.password;
-                delete data.verification_code;
+                delete data[0].password;
+                delete data[0].verification_code;
                 res.send(data[0]);
             } else {
                 res.status(400).send({

@@ -3,10 +3,12 @@ const { authJwt, verifySignUp } = require("../middleware");
 module.exports = app => {
     const users = require("../controllers/UserController.js");
 
-    app.post("/register", [verifySignUp.checkDuplicateUsernameOrEmail], users.create);
+    app.post("/api/register", [verifySignUp.checkDuplicateUsernameOrEmail], users.create);
 
-    app.post("/verifyOtp", [authJwt.verifyToken], users.verifyOtp);
+    app.post("/api/login", users.login);
 
-    app.get("/user", [authJwt.verifyToken], users.getUser);
+    app.post("/api/verifyOtp", [authJwt.verifyToken], users.verifyOtp);
+
+    app.get("/api/user", [authJwt.verifyToken], users.getUser);
 
 };
