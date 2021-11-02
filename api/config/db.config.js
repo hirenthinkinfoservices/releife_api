@@ -1,9 +1,10 @@
 module.exports = {
     HOST: "192.168.64.3",
     port: '3306',
-    USER: "username",
+    USER: "root",
     PASSWORD: "password",
     DB: "reliefe_app",
+    logging :false,
     dialect: "mysql",
     pool: {
         max: 5,

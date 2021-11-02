@@ -14,14 +14,14 @@ module.exports = function (sequelize, DataTypes) {
             type: DataTypes.STRING,
             allowNull: false
         },
-        mobile_number: {
-            type: DataTypes.STRING,
-            allowNull: false
-        },
-        email_id: {
-            type: DataTypes.STRING,
-            allowNull: true
-        },
+        // mobile_number: {
+        //     type: DataTypes.STRING,
+        //     allowNull: false
+        // },
+        // email_id: {
+        //     type: DataTypes.STRING,
+        //     allowNull: false
+        // },
         user_name: {
             type: DataTypes.STRING,
             allowNull: false
@@ -38,12 +38,14 @@ module.exports = function (sequelize, DataTypes) {
         createdAt: {
             field: 'created_at',
             type: DataTypes.DATE,
-            allowNull: true
+            allowNull: true,
+            defaultValue: sequelize.literal('CURRENT_TIMESTAMP')
         },
         updatedAt: {
             field: 'updated_at',
             type: DataTypes.DATE,
-            allowNull: true
+            allowNull: true,
+            defaultValue: sequelize.literal('CURRENT_TIMESTAMP')
         },
     }, {
         tableName: 'users'

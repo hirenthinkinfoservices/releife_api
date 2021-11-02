@@ -1,46 +1,81 @@
 var md5 = require('md5');
 const db = require("../models");
 const User = db.user;
+const UserMeta = db.userMeta
 var jwt = require("jsonwebtoken");
 
-exports.create = (req, res) => {
+
+exports.create = async (req, res) => {
+   // console.log(req)
 
     if (!req.body) {
         res.status(400).send({
             message: "Content can not be empty!"
         });
     }
-
-    var verificationCode = Math.floor(100000 + Math.random() * 900000);
+    try{
+        var verificationCode = Math.floor(100000 + Math.random() * 900000);
     const user = {
         first_name: req.body.first_name,
         last_name: req.body.last_name,
-        mobile_number: req.body.mobile_number,
-        email_id: req.body.email_id,
+        //mobile_number: req.body.mobile_number,
+        //email_id: req.body.email_id,
         user_name: req.body.user_name,
         password: md5(req.body.password),
         verification_code: md5(verificationCode)
     };
-    User.create(user)
-        .then(data => {
-            var token = jwt.sign({ id: data.id }, 'releife_app', {
-                expiresIn: 86400 // 24 hours
-            });
-            data.verification_code = verificationCode;
-            delete data.password;
-            var data = {
-                status: true,
-                token: token,
-                userData: data
-            }
-            res.send(data);
-        })
-        .catch(err => {
-            res.status(500).send({
-                status: false,
-                message: err.message || "Some error occurred while creating the Tutorial."
-            });
+        const userData =  await User.create(user)
+        const userMeta = {
+                        mobile_number: req.body.mobile_number,
+                        email_id: req.body.email_id,
+                    }
+        const userMetaData = await UserMeta.create(userMeta)
+        var token = jwt.sign({ id: userData.id }, 'releife_app', {
+                            expiresIn: 86400 // 24 hours
+                        });
+                        userData.verification_code = verificationCode;
+                        delete userData.password;
+                        var data = {
+                            status: true,
+                            token: token,
+                            userData: Object.assign(userMeta,user)
+                        }
+                        res.send(data)
+    }catch(error){
+        console.log(error)
+        res.status(500).send({
+                        status: false,
+                       // message: err.message || "Some error occurred while creating the Tutorial."
         });
+    }
+    // User.create(user)
+    //     .then(data => {
+    //         const userMeta = {
+    //             mobile_number: req.body.mobile_number,
+    //             email_id: req.body.email_id,
+    //         }
+    //         UserMeta.create(userMeta).then(data1 =>{
+    //             var token = jwt.sign({ id: data.id }, 'releife_app', {
+    //                 expiresIn: 86400 // 24 hours
+    //             });
+    //             console.log(data)
+    //             data.verification_code = verificationCode;
+    //             delete data.password;
+    //             var data = {
+    //                 status: true,
+    //                 token: token,
+    //                 userData: data,data1
+    //             }
+    //             res.send(data);
+    //         })
+    //         })
+            
+    //     .catch(err => {
+    //         res.status(500).send({
+    //             status: false,
+    //             message: err.message || "Some error occurred while creating the Tutorial."
+    //         });
+    //     }); 
 };
 
 exports.login = (req, res) => {
